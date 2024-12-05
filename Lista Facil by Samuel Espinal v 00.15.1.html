@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Fácil</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h3 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box; /* Ensure padding is included in width */
+        }
+        .button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .task-container {
+            margin-top: 20px;
+        }
+        .task {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .task.completed {
+            background-color: #d4edda;
+            text-decoration: line-through;
+        }
+        .task .task-text {
+            flex: 1;
+            font-size: 16px;
+        }
+        .task input[type="checkbox"] {
+            margin-right: 15px;
+        }
+        .task-buttons {
+            display: none;
+            margin-left: 10px;
+        }
+        .task .task-buttons button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .task .task-buttons button.delete {
+            background-color: #dc3545;
+        }
+        .task .task-buttons button.edit {
+            background-color: #ffc107;
+        }
+        .edit-mode .task .task-buttons {
+            display: inline-block;
+        }
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+        }
+        footer span {
+            color: #333;
+            font-weight: bold;
+        }
+        footer a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .list-button {
+            display: block;
+            padding: 12px;
+            margin: 5px 0;
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .list-button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Lista Fácil</h1>
+    <div id="list-name">Lista: Ninguna lista activa</div>
+
+    <input type="text" id="task-input" placeholder="Escribe una tarea..." />
+    <button class="button" id="add-task-button" aria-label="Agregar tarea">Agregar Tarea</button>
+    <button class="button" id="edit-mode-button" aria-label="Activar Edición">Activar Edición</button>
+    <button class="button" id="save-list-button" aria-label="Guardar lista">Guardar Lista</button>
+    <button class="button" id="open-list-button" aria-label="Abrir lista guardada">Abrir Lista</button>
+    <button class="button" id="new-list-button" aria-label="Crear nueva lista">Nueva Lista</button>
+    <button class="button" id="share-list-button" aria-label="Compartir lista">Compartir Lista</button>
+
+    <div class="task-container">
+        <h3>Tareas Pendientes</h3>
+        <div id="pending-tasks"></div>
+    </div>
+    <div class="task-container">
+        <h3>Tareas Completadas</h3>
+        <div id="completed-tasks"></div>
+    </div>
+
+    <footer>
+        <p>Lista de tareas simple <span><a href="https://www.facebook.com/saespinal" target="_blank">Creado por Samuel Espinal 2025</a></span></p>
+    </footer>
+</div>
+
+<!-- Modal para listas guardadas -->
+<div class="modal" id="list-modal">
+    <div class="modal-content">
+        <h3>Listas Guardadas</h3>
+        <div id="saved-lists"></div>
+        <button class="button" id="close-modal">Cerrar</button>
+    </div>
+</div>
+
+<script>
+    const addTaskButton = document.getElementById('add-task-button');
+    const taskInput = document.getElementById('task-input');
+    const taskContainer = document.getElementById('pending-tasks');
+    const completedTasksContainer = document.getElementById('completed-tasks');
+    const saveListButton = document.getElementById('save-list-button');
+    const shareListButton = document.getElementById('share-list-button');
+    const openListButton = document.getElementById('open-list-button');
+    const newListButton = document.getElementById('new-list-button');
+    const listNameElement = document.getElementById('list-name');
+    const modal = document.getElementById('list-modal');
+    const closeModalButton = document.getElementById('close-modal');
+    const editModeButton = document.getElementById('edit-mode-button');
+    const taskList = [];
+    let currentListName = null;
+    let isEditMode = false;
+
+    function loadSavedLists() {
+        const savedLists = Object.keys(localStorage);
+        const savedListsContainer = document.getElementById('saved-lists');
+        savedListsContainer.innerHTML = '';
+        savedLists.forEach((listName) => {
+            const listButton = document.createElement('button');
+            listButton.className = 'list-button';
+            listButton.textContent = listName;
+            listButton.onclick = () => loadList(listName);
+            savedListsContainer.appendChild(listButton);
+        });
+    }
+
+    openListButton.addEventListener('click', () => {
+        if (taskList.length > 0 && !currentListName) {
+            const confirmation = confirm("¿Deseas continuar y perder las tareas no guardadas?");
+            if (!confirmation) return;
+        }
+        loadSavedLists();
+        modal.style.display = 'flex';
+    });
+
+    closeModalButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    function loadList(listName) {
+        const listData = JSON.parse(localStorage.getItem(listName));
+        currentListName = listName;
+        taskList.length = 0;
+        taskList.push(...listData);
+        listNameElement.textContent = `Lista: ${listName}`;
+        renderTasks();
+        modal.style.display = 'none';
+    }
+
+    function saveList() {
+        if (!currentListName) {
+            currentListName = prompt("Introduce un nombre para la lista");
+        }
+        localStorage.setItem(currentListName, JSON.stringify(taskList));
+        alert("Lista guardada.");
+    }
+
+    saveListButton.addEventListener('click', () => {
+        if (taskList.length === 0) {
+            alert("No hay tareas para guardar.");
+            return;
+        }
+        saveList();
+    });
+
+    newListButton.addEventListener('click', () => {
+        if (taskList.length > 0 && !currentListName) {
+            const confirmation = confirm("Si no has guardado la lista actual, se perderán los datos. ¿Deseas continuar?");
+            if (!confirmation) return;
+        }
+        currentListName = null;
+        listNameElement.textContent = 'Lista: Ninguna lista activa';
+        taskList.length = 0;
+        renderTasks();
+    });
+
+    shareListButton.addEventListener('click', () => {
+        if (taskList.length === 0) {
+            alert("No hay tareas para compartir. Crea o abre una lista antes de compartir.");
+            return;
+        }
+        const pendingTasks = taskList.filter(task => !task.completed);
+        const completedTasks = taskList.filter(task => task.completed);
+        
+        let tasksText = '*Lista de Tareas:*\n---------------------------\n';
+        tasksText += '*Tareas Pendientes:*\n';
+        tasksText += pendingTasks.map(task => `* ${task.text}`).join('\n') + '\n';
+        tasksText += '---------------------------\n';
+        tasksText += '*Tareas Completadas:*\n';
+        tasksText += completedTasks.map(task => `* ${task.text}`).join('\n') + '\n';
+        tasksText += '---------------------------\n';
+        tasksText += 'Enviado desde la app: Lista Fácil \nby Samuel Espinal.';
+
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(tasksText)}`;
+        window.open(whatsappUrl, '_blank');
+    });
+
+    function renderTasks() {
+        taskContainer.innerHTML = '';
+        completedTasksContainer.innerHTML = '';
+        taskList.forEach((task, index) => {
+            const taskElement = document.createElement('div');
+            taskElement.className = `task ${task.completed ? 'completed' : ''}`;
+            taskElement.innerHTML = `
+                <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleComplete(${index})" />
+                <span class="task-text" onclick="toggleComplete(${index})">${task.text}</span>
+                <div class="task-buttons">
+                    <button class="edit" onclick="editTask(${index})">✏️</button>
+                    <button class="delete" onclick="deleteTask(${index})">🗑️</button>
+                </div>
+            `;
+            if (task.completed) {
+                completedTasksContainer.appendChild(taskElement);
+            } else {
+                taskContainer.appendChild(taskElement);
+            }
+        });
+    }
+
+    addTaskButton.addEventListener('click', () => {
+        const taskText = taskInput.value.trim();
+        if (taskText) {
+            taskList.push({ text: taskText, completed: false });
+            renderTasks();
+            taskInput.value = '';
+        }
+    });
+
+    function toggleComplete(index) {
+        taskList[index].completed = !taskList[index].completed;
+        renderTasks();
+    }
+
+    function editTask(index) {
+        const newText = prompt('Edita la tarea:', taskList[index].text);
+        if (newText !== null) {
+            taskList[index].text = newText;
+            renderTasks();
+        }
+    }
+
+    function deleteTask(index) {
+        const confirmation = confirm('¿Estás seguro de que deseas eliminar esta tarea?');
+        if (confirmation) {
+            taskList.splice(index, 1);
+            renderTasks();
+        }
+    }
+
+    editModeButton.addEventListener('click', () => {
+        isEditMode = !isEditMode;
+        if (isEditMode) {
+            editModeButton.textContent = 'Desactivar Edición';
+            taskContainer.classList.add('edit-mode');
+        } else {
+            editModeButton.textContent = 'Activar Edición';
+            taskContainer.classList.remove('edit-mode');
+        }
+    });
+</script>
+
+</body>
+</html>
